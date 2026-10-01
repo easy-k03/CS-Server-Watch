@@ -1,0 +1,105 @@
+name: Build and release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to create, such as v1.0.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish GitHub Release
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Refuse a tracked publish folder
+        shell: pwsh
+        run: |
+          $tracked = git ls-files -- "publish" "publish/*"
+          if ($tracked) {
+            Write-Error "publish/ is build output and must not be committed or uploaded from the repository."
+            exit 1
+          }
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test tests/CsServerWatch.Tests/CsServerWatch.Tests.csproj -c Release --nologo
+
+      - name: Publish unpackaged app
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "cs-server-watch"
+          if (Test-Path $out) { Remove-Item $out -Recurse -Force }
+          dotnet publish src/CsServerWatch/CsServerWatch.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -o $out `
+            -p:PublishSingleFile=true `
+            -p:IncludeAllContentForSelfExtract=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:WindowsAppSDKSelfContained=true `
+            -p:WindowsPackageType=None `
+            -p:PublishTrimmed=false `
+            -p:PublishReadyToRun=false `
+            --nologo
+          $exe = Join-Path $out "CsServerWatch.exe"
+          if (-not (Test-Path -LiteralPath $exe)) {
+            throw "Publish did not produce CsServerWatch.exe"
+          }
+
+      - name: Zip executable
+        id: pack
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP "cs-server-watch\CsServerWatch.exe"
+          $zip = Join-Path $env:RUNNER_TEMP "CsServerWatch-win-x64.zip"
+          if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+          Compress-Archive -LiteralPath $exe -DestinationPath $zip
+          $zip = (Resolve-Path -LiteralPath $zip).Path.Replace('\', '/')
+          "zip=$zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Choose release tag
+        id: tag
+        shell: pwsh
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          $tag = if ($env:REF_TYPE -eq "tag") { $env:REF_NAME } else { $env:INPUT_TAG }
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            throw "Enter a release tag such as v1.0.0."
+          }
+          $tag = $tag.Trim()
+          if ($tag -notmatch '^v\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?$') {
+            throw "Release tag must look like v1.2.3 or v1.2.3-beta.1. Got: $tag"
+          }
+          "name=$tag" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: CS Server Watch ${{ steps.tag.outputs.name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: ${{ steps.pack.outputs.zip }}

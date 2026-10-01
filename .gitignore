@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+servers.json
+servers.json.tmp
+crash.log
+tests/_tmp*
+.tools/
+[Bb]in/
+[Oo]bj/
+publish/
+
+# Local build output. Do not commit or upload this folder.
+/publish/

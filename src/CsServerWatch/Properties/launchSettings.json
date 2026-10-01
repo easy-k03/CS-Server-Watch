@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "CsServerWatch (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "CsServerWatch (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

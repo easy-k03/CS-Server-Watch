@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="CsServerWatch.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:CsServerWatch"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{StaticResource BgBrush}"
+    mc:Ignorable="d">
+    <Page.KeyboardAccelerators>
+        <KeyboardAccelerator Key="F5" Invoked="OnRefreshKey" />
+    </Page.KeyboardAccelerators>
+    <Grid Padding="28,18,28,22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Border Width="46" Height="46" CornerRadius="14" Background="{StaticResource GoldBrush}" VerticalAlignment="Center">
+                <TextBlock Text="CS" FontWeight="Bold" FontSize="16" Foreground="{StaticResource InkOnGoldBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="COUNTER-STRIKE" FontSize="11" FontWeight="SemiBold" CharacterSpacing="180" Foreground="{StaticResource GoldBrush}" />
+                <TextBlock Text="Server Watch" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,-2,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <TextBlock x:Name="SummaryText" Text="No saved servers" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
+                <TextBlock Text="Public query only. Passwords are never stored." FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,2,0,0" HorizontalAlignment="Right" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="0,22,0,0" ColumnSpacing="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox
+                x:Name="AddressBox"
+                Height="48"
+                Padding="16,0"
+                FontSize="16"
+                PlaceholderText="ip:port, connect host:port, or steam://connect/..."
+                Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineBrush}"
+                Foreground="{StaticResource InkBrush}"
+                CornerRadius="14"
+                KeyDown="OnAddressKeyDown" />
+            <Button x:Name="SaveButton" Grid.Column="1" Content="Check &amp; save" Style="{StaticResource GoldButton}" MinWidth="148" Click="OnSaveClick" />
+            <Button x:Name="RefreshButton" Grid.Column="2" Content="Refresh" Style="{StaticResource GhostButton}" MinWidth="104" Click="OnRefreshClick" />
+        </Grid>
+
+        <InfoBar
+            x:Name="StatusBar"
+            Grid.Row="2"
+            Margin="0,14,0,0"
+            IsOpen="False"
+            IsClosable="True"
+            CornerRadius="12" />
+
+        <Grid Grid.Row="3" Margin="0,16,0,0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="430" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Background="{StaticResource PanelBrush}" CornerRadius="20" Padding="12">
+                <Grid>
+                    <ListView
+                        x:Name="ServerList"
+                        ItemsSource="{x:Bind Cards}"
+                        SelectionMode="Single"
+                        SelectionChanged="OnSelectionChanged"
+                        Background="Transparent"
+                        BorderThickness="0">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,10" />
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListViewItem">
+                                            <ListViewItemPresenter
+                                                Content="{TemplateBinding Content}"
+                                                ContentMargin="0"
+                                                SelectedBackground="Transparent"
+                                                SelectedPointerOverBackground="Transparent"
+                                                PointerOverBackground="Transparent"
+                                                PressedBackground="Transparent"
+                                                FocusVisualPrimaryThickness="0"
+                                                FocusVisualSecondaryThickness="0" />
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="local:ServerCard">
+                                <Border Background="{StaticResource CardBrush}" BorderBrush="{x:Bind BorderBrush, Mode=OneWay}" BorderThickness="1.5" CornerRadius="16" Padding="16,14">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Border Background="{x:Bind BadgeBrush, Mode=OneWay}" CornerRadius="8" Padding="8,2" VerticalAlignment="Center">
+                                                    <TextBlock Text="{x:Bind Product, Mode=OneWay}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource InkOnGoldBrush}" />
+                                                </Border>
+                                                <TextBlock Text="{x:Bind StatusLabel, Mode=OneWay}" FontSize="12" Foreground="{x:Bind StatusBrush, Mode=OneWay}" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" MaxLines="2" Margin="0,8,0,0" />
+                                            <TextBlock Text="{x:Bind Display, Mode=OneWay}" FontSize="12" Foreground="{StaticResource DimBrush}" Margin="0,4,0,0" />
+                                            <TextBlock Text="{x:Bind Map, Mode=OneWay}" FontSize="13" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                            <TextBlock Text="{x:Bind CountText, Mode=OneWay}" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" HorizontalAlignment="Right" />
+                                            <TextBlock Text="{x:Bind PingText, Mode=OneWay}" FontSize="13" Foreground="{StaticResource GoldBrush}" HorizontalAlignment="Right" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <StackPanel x:Name="EmptyList" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+                        <TextBlock Text="No servers yet" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" HorizontalAlignment="Center" />
+                        <TextBlock Text="A server is saved only after it answers as CS:GO or CS2." FontSize="13" Foreground="{StaticResource DimBrush}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="280" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="1" Background="{StaticResource PanelBrush}" CornerRadius="20" Padding="26,22">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <StackPanel x:Name="EmptyDetail" Spacing="16">
+                            <TextBlock Text="Check before it is saved" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                            <TextBlock Text="Type an address. The app asks the server, with the public Steam query, whether it is CS:GO or CS2. Silence and other games are not saved." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" FontSize="15" />
+                            <Border Background="{StaticResource CardBrush}" CornerRadius="16" Padding="16" Margin="0,8,0,0">
+                                <TextBlock Text="Accepted: CS:GO and CS2. Rejected: CS 1.6, CS:Source, Team Fortress, and any address that does not answer." TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel x:Name="DetailPanel" Visibility="Collapsed" Spacing="0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <Border x:Name="DetailBadge" CornerRadius="8" Padding="8,2">
+                                            <TextBlock x:Name="DetailProduct" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkOnGoldBrush}" />
+                                        </Border>
+                                        <TextBlock x:Name="DetailStatus" VerticalAlignment="Center" FontSize="13" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="DetailName" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                                    <TextBlock x:Name="DetailAddress" FontSize="14" Foreground="{StaticResource DimBrush}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                                    <Button Content="Copy connect" Style="{StaticResource GhostButton}" Click="OnCopyClick" />
+                                    <Button Content="Remove" Style="{StaticResource DangerButton}" Click="OnRemoveClick" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,22,0,0" ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border Background="{StaticResource CardBrush}" CornerRadius="16" Padding="14,12">
+                                    <StackPanel>
+                                        <TextBlock Text="PLAYERS" FontSize="11" CharacterSpacing="120" Foreground="{StaticResource DimBrush}" />
+                                        <TextBlock x:Name="StatPlayers" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Background="{StaticResource CardBrush}" CornerRadius="16" Padding="14,12">
+                                    <StackPanel>
+                                        <TextBlock Text="MAP" FontSize="11" CharacterSpacing="120" Foreground="{StaticResource DimBrush}" />
+                                        <TextBlock x:Name="StatMap" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Background="{StaticResource CardBrush}" CornerRadius="16" Padding="14,12">
+                                    <StackPanel>
+                                        <TextBlock Text="PING" FontSize="11" CharacterSpacing="120" Foreground="{StaticResource DimBrush}" />
+                                        <TextBlock x:Name="StatPing" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource GoldBrush}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="3" Background="{StaticResource CardBrush}" CornerRadius="16" Padding="14,12">
+                                    <StackPanel>
+                                        <TextBlock Text="BOTS" FontSize="11" CharacterSpacing="120" Foreground="{StaticResource DimBrush}" />
+                                        <TextBlock x:Name="StatBots" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <TextBlock x:Name="DetailError" Margin="0,14,0,0" Foreground="{StaticResource DangerBrush}" TextWrapping="Wrap" Visibility="Collapsed" />
+                            <TextBlock x:Name="PasswordNote" Margin="0,8,0,0" Foreground="{StaticResource GoldBrush}" TextWrapping="Wrap" Visibility="Collapsed" />
+
+                            <ItemsControl x:Name="FactList" Margin="0,18,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:FactRow">
+                                        <Grid Margin="0,0,0,8" ColumnSpacing="16">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="120" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind Label}" Foreground="{StaticResource DimBrush}" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Value}" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="PLAYERS" FontSize="12" FontWeight="SemiBold" CharacterSpacing="140" Foreground="{StaticResource GoldBrush}" Margin="0,18,0,8" />
+                            <TextBlock x:Name="PlayersNote" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed" />
+                            <ItemsControl x:Name="PlayerList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:PlayerRow">
+                                        <Grid Margin="0,0,0,8" ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="80" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind Name}" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Score}" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Right" />
+                                            <TextBlock Grid.Column="2" Text="{x:Bind Time}" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="NoPlayers" Text="No player names yet." Foreground="{StaticResource DimBrush}" Visibility="Collapsed" />
+
+                            <TextBlock Text="RULES" FontSize="12" FontWeight="SemiBold" CharacterSpacing="140" Foreground="{StaticResource GoldBrush}" Margin="0,18,0,8" />
+                            <TextBlock x:Name="RulesNote" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed" />
+                            <ItemsControl x:Name="RuleList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:RuleRow">
+                                        <Grid Margin="0,0,0,6" ColumnSpacing="16">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="220" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{x:Bind Key}" Foreground="{StaticResource DimBrush}" TextWrapping="Wrap" />
+                                            <TextBlock Grid.Column="1" Text="{x:Bind Value}" Foreground="{x:Bind ValueBrush}" TextWrapping="Wrap" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="CheckedText" Margin="0,16,0,0" FontSize="12" Foreground="{StaticResource DimBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>
